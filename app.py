@@ -3,6 +3,7 @@ import json
 import csv
 import io
 import time
+import os
 from typing import Iterator
 import pandas as pd
 
@@ -30,18 +31,57 @@ with col1:
         height=250
     )
 
+# Load sample candidate file helper
+sample_file_path = "sample_candidates.json"
+sample_data_content = ""
+if os.path.exists(sample_file_path):
+    try:
+        with open(sample_file_path, "r", encoding="utf-8") as sf:
+            sample_data_content = sf.read()
+    except Exception:
+        pass
+
 with col2:
     st.subheader("Candidate Database Uploader")
+    
+    # Load Sample button
+    load_sample_clicked = st.button("Load Sample Candidates", use_container_width=True)
+    
     uploaded_file = st.file_uploader(
-        "Upload candidates.jsonl file",
+        "Or upload your candidates.jsonl file",
         type=["jsonl", "json"]
     )
     
+    st.info("Your file must follow the Redrob candidate schema. Download a sample file to see the expected format.")
+    
+    if sample_data_content:
+        st.download_button(
+            label="Download sample_candidates.json template",
+            data=sample_data_content,
+            file_name="sample_candidates.json",
+            mime="application/json",
+            use_container_width=True
+        )
+    
     run_clicked = st.button("Run Ranking", use_container_width=True)
 
-if run_clicked:
-    if not uploaded_file:
-        st.error("Please upload a candidates file first.")
+# Determine file data sources
+file_source = None
+if load_sample_clicked:
+    if sample_data_content:
+        file_source = sample_data_content
+        st.toast("Loaded sample candidates database!")
+    else:
+        st.error("Sample candidate file template not found in workspace root.")
+elif uploaded_file:
+    try:
+        file_source = uploaded_file.getvalue().decode("utf-8").strip()
+    except Exception as e:
+        st.error(f"Failed to decode uploaded file: {e}")
+
+if run_clicked or load_sample_clicked:
+    if not file_source:
+        st.error("Please upload a candidates file or click 'Load Sample Candidates' first.")
     else:
         st.info("Processing candidates database... Please wait.")
         progress_bar = st.progress(0.0)
@@ -56,18 +96,15 @@ if run_clicked:
         start_time = time.time()
         
         try:
-            # Read and parse input file format
-            file_content = uploaded_file.getvalue().decode("utf-8").strip()
-            
             raw_candidates = []
-            if file_content.startswith("["):
+            if file_source.startswith("["):
                 try:
-                    raw_candidates = json.loads(file_content)
+                    raw_candidates = json.loads(file_source)
                 except Exception as je:
                     st.error(f"Failed to parse JSON array: {je}")
             else:
                 # Parse as JSONL line by line
-                for line in file_content.splitlines():
+                for line in file_source.splitlines():
                     line = line.strip()
                     if not line:
                         continue
@@ -77,7 +114,7 @@ if run_clicked:
                         continue
             
             total_candidates_loaded = len(raw_candidates)
-            st.info(f"Loaded {total_candidates_loaded} candidates from the file. Starting scoring...")
+            st.info(f"Loaded {total_candidates_loaded} candidates from the database. Starting scoring...")
             
             for idx, candidate in enumerate(raw_candidates):
                 cid = candidate.get("candidate_id")
