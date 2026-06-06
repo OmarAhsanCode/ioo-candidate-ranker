@@ -1,0 +1,11 @@
+candidates.jsonl
+__pycache__/
+*.pyc
+*.gz
+.env
+check_report.txt
+debug.py
+.DS_Store
+ioo-candidate-ranker/
+~$*.docx
+*.docx
