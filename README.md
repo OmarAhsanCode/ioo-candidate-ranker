@@ -1,3 +1,14 @@
+---
+title: IOO Candidate Ranking System
+emoji: 🎯
+colorFrom: blue
+colorTo: gray
+sdk: streamlit
+sdk_version: "1.32.0"
+app_file: app.py
+pinned: false
+---
+
 # AI-Powered Candidate Ranking System
 
 An AI-powered candidate ranking system built for the **India Runs at Active Skills — Data & AI Challenge 2026**.
