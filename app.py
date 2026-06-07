@@ -6,11 +6,101 @@ import time
 import os
 from typing import Iterator
 import pandas as pd
+from fpdf import FPDF
 
 # Import our backend components
 from scorer import score_candidate
 from reasoning import generate_reasoning
 from honeypot import is_honeypot
+
+class CandidateReportPDF(FPDF):
+    def header(self):
+        # Draw a beautiful dark slate banner at the top
+        self.set_fill_color(30, 41, 59) # Slate 800
+        self.rect(0, 0, 210, 35, "F")
+        
+        self.set_text_color(255, 255, 255)
+        self.set_font("helvetica", "B", 16)
+        # Shift Y down slightly inside the banner
+        self.set_y(8)
+        self.cell(0, 8, "IOO CANDIDATE RANKING SYSTEM", new_x="LMARGIN", new_y="NEXT", align="C")
+        self.set_font("helvetica", "I", 10)
+        self.cell(0, 6, "AI-Powered Evaluation & Shortlist Report", new_x="LMARGIN", new_y="NEXT", align="C")
+        self.set_y(35) # reset Y below banner
+        self.ln(5)
+
+    def footer(self):
+        self.set_y(-15)
+        self.set_font("helvetica", "I", 8)
+        self.set_text_color(100, 116, 139) # Slate 500
+        self.cell(0, 10, f"Page {self.page_no()}/{{nb}} | Team IOO - Confidential", align="C")
+
+def clean_txt(text: str) -> str:
+    if not text:
+        return ""
+    # Replace common unicode punctuation with ASCII equivalents
+    replacements = {
+        "\u201c": '"', "\u201d": '"', # smart quotes
+        "\u2018": "'", "\u2019": "'", # smart apostrophes
+        "\u2013": "-", "\u2014": "-", # dashes
+        "\u2022": "*", # bullet points
+    }
+    for k, v in replacements.items():
+        text = text.replace(k, v)
+    return text.encode("latin-1", errors="replace").decode("latin-1")
+
+def generate_pdf_report(top_100) -> bytes:
+    pdf = CandidateReportPDF()
+    pdf.set_margin(10)
+    pdf.add_page()
+    
+    # Metadata/Summary Block
+    pdf.set_text_color(15, 23, 42) # Slate 900
+    pdf.set_font("helvetica", "B", 12)
+    pdf.cell(0, 8, "Evaluation Summary", new_x="LMARGIN", new_y="NEXT")
+    
+    pdf.set_font("helvetica", "", 10)
+    pdf.cell(0, 6, f"Date: {time.strftime('%Y-%m-%d')}", new_x="LMARGIN", new_y="NEXT")
+    pdf.cell(0, 6, f"Total Candidates Ranked: {len(top_100)}", new_x="LMARGIN", new_y="NEXT")
+    pdf.ln(5)
+    
+    pdf.set_font("helvetica", size=8)
+    
+    with pdf.table(
+        col_widths=(12, 28, 15, 38, 27, 70),
+        align="CENTER",
+        cell_fill_color=(248, 250, 252), # Slate 50
+        cell_fill_mode="ROWS",
+        line_height=5
+    ) as table:
+        # Header Row
+        pdf.set_fill_color(30, 41, 59)
+        pdf.set_text_color(255, 255, 255)
+        pdf.set_font("helvetica", "B", 8)
+        
+        row = table.row()
+        row.cell("Rank")
+        row.cell("Candidate ID")
+        row.cell("Score")
+        row.cell("Current Title")
+        row.cell("Location")
+        row.cell("Reasoning")
+        
+        # Reset fonts/colors for body
+        pdf.set_text_color(15, 23, 42)
+        pdf.set_font("helvetica", "", 8)
+        
+        for item in top_100:
+            row = table.row()
+            row.cell(clean_txt(str(item.get("rank", ""))))
+            row.cell(clean_txt(str(item.get("candidate_id", ""))))
+            row.cell(clean_txt(f"{item.get('score', 0.0):.2f}"))
+            row.cell(clean_txt(str(item.get("title", "N/A"))))
+            row.cell(clean_txt(str(item.get("location", "N/A"))))
+            row.cell(clean_txt(str(item.get("reasoning", "N/A"))))
+            
+    return bytes(pdf.output())
+
 
 st.set_page_config(
     page_title="Accurate Candidate Ranking System",
@@ -188,15 +278,26 @@ if run_clicked or load_sample_clicked:
             for item in top_100:
                 writer.writerow([item["candidate_id"], item["rank"], item["score"], item["reasoning"]])
             
-            # Display Download Button
+            # Display Download Buttons
             st.markdown("### Download Results")
-            st.download_button(
-                label="Download Top 100 as submission.csv",
-                data=csv_buffer.getvalue(),
-                file_name="submission.csv",
-                mime="text/csv",
-                use_container_width=True
-            )
+            dl_col1, dl_col2 = st.columns(2)
+            with dl_col1:
+                st.download_button(
+                    label="Download Top 100 as submission.csv",
+                    data=csv_buffer.getvalue(),
+                    file_name="submission.csv",
+                    mime="text/csv",
+                    use_container_width=True
+                )
+            with dl_col2:
+                pdf_data = generate_pdf_report(top_100)
+                st.download_button(
+                    label="Download Top 100 as report.pdf",
+                    data=pdf_data,
+                    file_name="ioo_candidate_ranking_report.pdf",
+                    mime="application/pdf",
+                    use_container_width=True
+                )
             
             # Display Top 20 Table
             st.markdown("### Top 20 Candidates Shortlist")
