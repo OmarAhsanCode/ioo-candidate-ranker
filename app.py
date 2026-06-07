@@ -69,13 +69,10 @@ def generate_pdf_report(top_100) -> bytes:
     with pdf.table(
         col_widths=(12, 28, 15, 38, 27, 70),
         align="CENTER",
-        cell_fill_color=(248, 250, 252), # Slate 50
-        cell_fill_mode="ROWS",
         line_height=5
     ) as table:
         # Header Row
-        pdf.set_fill_color(30, 41, 59)
-        pdf.set_text_color(255, 255, 255)
+        pdf.set_text_color(0, 0, 0)
         pdf.set_font("helvetica", "B", 8)
         
         row = table.row()
@@ -87,7 +84,7 @@ def generate_pdf_report(top_100) -> bytes:
         row.cell("Reasoning")
         
         # Reset fonts/colors for body
-        pdf.set_text_color(15, 23, 42)
+        pdf.set_text_color(0, 0, 0)
         pdf.set_font("helvetica", "", 8)
         
         for item in top_100:
