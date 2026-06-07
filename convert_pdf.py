@@ -4,8 +4,8 @@ import comtypes.client
 
 def convert_pptx_to_pdf():
     # Paths
-    ppt_path = r"C:\Users\hp\OneDrive\Desktop\[PUB] India_runs_data_and_ai_challenge\IOO_AI_Ranking_System.pptx"
-    pdf_path = r"C:\Users\hp\OneDrive\Desktop\[PUB] India_runs_data_and_ai_challenge\IOO_AI_Ranking_System.pdf"
+    ppt_path = r"C:\Projects\[PUB] India_runs_data_and_ai_challenge\IOO_AI_Ranking_System.pptx"
+    pdf_path = r"C:\Projects\[PUB] India_runs_data_and_ai_challenge\IOO_AI_Ranking_System.pdf"
 
     if not os.path.exists(ppt_path):
         print(f"Error: {ppt_path} does not exist.")

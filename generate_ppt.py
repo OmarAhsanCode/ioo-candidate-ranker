@@ -622,7 +622,7 @@ def create_presentation():
     p_n3.font.color.rgb = LIGHT_GRAY
 
     # Save
-    out_dir = "c:\\Users\\hp\\OneDrive\\Desktop\\[PUB] India_runs_data_and_ai_challenge"
+    out_dir = r"C:\Projects\[PUB] India_runs_data_and_ai_challenge"
     out_path = os.path.join(out_dir, "IOO_AI_Ranking_System.pptx")
     prs.save(out_path)
     print(f"Presentation saved successfully at: {out_path}")
